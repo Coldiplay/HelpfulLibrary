@@ -1,0 +1,248 @@
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Data;
+using System.IO;
+using System.Linq;
+using System.Runtime.CompilerServices;
+using System.Text.Json;
+using System.Threading.Tasks;
+using System.Windows.Input;
+using VmSource.Abstract.Model;
+using VmSource.Abstract.Vms;
+using VmSource.Interfaces;
+
+namespace VmSource
+{
+    namespace Interfaces 
+    {
+        public interface IConvertibleToVm<out TVm>
+        {
+            public TVm ConvertToVm();
+        }
+
+        public interface IConvertibleToModel<out TModel>
+        {
+            public TModel ConvertToModel();
+        }
+
+        public interface IBaseDb<TModel, TModelVm> 
+            where TModel : BaseModel
+            where  TModelVm : BaseModelVm<TModel>
+        {
+            Task<List<TModelVm>> FetchAll();
+            Task<bool> Update(TModelVm model);
+            Task<bool> Create(TModelVm model);
+            Task<bool> Kill(TModelVm model);
+            
+            Task<bool> SaveDb();
+        }
+    }
+    
+    namespace Abstract 
+    {
+        namespace Model
+        {
+            public abstract class BaseJsonDbImplementation<TModel, TModelVm> 
+                : IBaseDb<TModel, TModelVm> 
+                where TModel : BaseModel, IConvertibleToVm<TModelVm>
+                where TModelVm : BaseModelVm<TModel>
+            {
+                protected List<TModel> List;
+                protected List<TModelVm> ListVms;
+                protected readonly string PathToFile;
+                protected uint IdIncrement = 0;
+                
+                protected BaseJsonDbImplementation(string pathToFile)
+                {
+                    PathToFile = pathToFile;
+                    LoadDb(PathToFile);
+                }
+
+                protected virtual void LoadDb(string path)
+                {
+                    using (var fs = File.OpenRead(path))
+                    {
+                        List = JsonSerializer.Deserialize<List<TModel>>(fs)?.ToList() ?? [];
+                        ListVms = [.. List.Select(e => e.ConvertToVm())];
+                    }
+
+                    IdIncrement = List.Max(e => e.Id) + 1;
+                }
+                
+                public virtual async Task<List<TModelVm>> FetchAll() => ListVms.ToList();
+                public virtual async Task<bool> Create(TModelVm entry)
+                {
+                    if (List.Any(e => e.Id == entry.Id))
+                    {
+                        await Update(entry);
+                        return true;
+                    }
+                    
+                    entry.Id = IdIncrement++;
+                    
+                    List.Add(entry.ConvertToModel());
+                    ListVms.Add(entry);
+                    
+                    return await SaveDb();
+                }
+                public virtual async Task<bool> Update(TModelVm entry)
+                {
+                    var entryToChange = List.FirstOrDefault(e => e.Id == entry.Id);
+                    if (entryToChange is null)
+                    {
+                        throw new DBConcurrencyException("Entry not found");
+                    }
+                    
+                    var props = typeof(TModelVm).GetProperties();
+                    foreach (var property in props)
+                    {
+                        property.SetMethod?.Invoke(entryToChange, [property.GetValue(entry)]);    
+                    }
+                    
+                    return await SaveDb();
+                }
+                public virtual async Task<bool> Kill(TModelVm entry)
+                {
+                    var entryToDelete = List.FirstOrDefault(e => e.Id == entry.Id);
+                    if (entryToDelete is null)
+                        return false;
+                    List.Remove(entryToDelete);
+                    ListVms.Remove(entry);
+                    await SaveDb();
+                    return true;
+                }
+
+                public virtual async Task<bool> SaveDb()
+                {
+                    await using (var fs = new FileStream(PathToFile, FileMode.Create))
+                    {
+                        await JsonSerializer.SerializeAsync(fs, List);
+                    }
+
+                    return true;
+                }
+            }
+        
+            public abstract class BaseModel
+            {
+                public uint Id { get; set; }
+            }
+        }
+
+        namespace Vms 
+        {
+                public abstract class BaseModelVm<TModel>(TModel model) 
+                : BaseVm, IConvertibleToModel<TModel>, INotifyDataErrorInfo
+                where TModel : BaseModel
+            {
+                public uint Id
+                {
+                    get => Model.Id;
+                    set
+                    {
+                        if (value == Model.Id) return;
+                        Model.Id = value;
+                        OnPropertyChanged();
+                    }
+                }
+
+                protected TModel Model = model;
+                public TModel ConvertToModel() => Model;
+
+
+                protected Dictionary<string, List<string>> Errors = [];
+                public virtual IEnumerable GetErrors(string? propertyName)
+                {
+                    if (propertyName is null) return new List<string>();
+                    Errors.TryGetValue(propertyName, out var errors);
+                    return errors;
+                }
+
+                protected virtual void Validate([CallerMemberName] string? propertyName = null)
+                {
+                    if (string.IsNullOrEmpty(propertyName)) return;
+                    
+                    Errors[propertyName] = [];
+                }
+
+                protected void InvokeErrorsChanged(string? propertyName)
+                {
+                    OnPropertyChanged(nameof(HasErrors));
+                    ErrorsChanged?.Invoke(this, new DataErrorsChangedEventArgs(propertyName));
+                }
+                
+                public bool HasErrors => Errors.Any(prop => prop.Value.Count > 0);
+                public event EventHandler<DataErrorsChangedEventArgs>? ErrorsChanged;
+            }
+
+
+            public abstract class BaseVm : INotifyPropertyChanged
+            {
+                public event PropertyChangedEventHandler? PropertyChanged;
+
+                protected virtual void OnPropertyChanged([CallerMemberName] string? propertyName = null)
+                {
+                    PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+                }
+
+                protected bool SetField<T>(ref T field, T value, [CallerMemberName] string? propertyName = null)
+                {
+                    if (EqualityComparer<T>.Default.Equals(field, value)) return false;
+                    field = value;
+                    OnPropertyChanged(propertyName);
+                    return true;
+                }
+            }
+        }
+    }
+
+    
+    public class Command(Action action, Func<bool> canExecute) : ICommand
+    {
+        public bool CanExecute(object? parameter)
+        {
+            return canExecute();
+        }
+
+        public void Execute(object? parameter)
+        {
+            action();
+        }
+
+        public event EventHandler? CanExecuteChanged;
+        public virtual void RaiseExecuteChanged()
+        {
+            CanExecuteChanged?.Invoke(this, EventArgs.Empty);
+        }
+    }
+
+    public class Command<TParameter>(Action<TParameter?> action, Func<bool> canExecute) : ICommand
+    {
+        public bool CanExecute(object? parameter)
+        {
+            return canExecute();
+        }
+
+        public void Execute(object? parameter)
+        {
+            action((TParameter?)parameter);
+        }
+
+        public event EventHandler? CanExecuteChanged;
+
+        public virtual void RaiseExecuteChanged()
+        {
+            CanExecuteChanged?.Invoke(this, EventArgs.Empty);
+        }
+    }
+
+}
+
+namespace MyNamespace
+{
+    public class Testtt : BaseModel;
+
+    public class TestttVm(Testtt model) : BaseModelVm<Testtt>(model);
+}

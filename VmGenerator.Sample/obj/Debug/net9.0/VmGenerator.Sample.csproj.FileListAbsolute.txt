@@ -1,0 +1,15 @@
+C:\Users\Oldy\RiderProjects\HelpfulLibrary\VmGenerator\VmGenerator.Sample\obj\Debug\net9.0\VmGenerator.Sample.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\Oldy\RiderProjects\HelpfulLibrary\VmGenerator\VmGenerator.Sample\obj\Debug\net9.0\VmGenerator.Sample.AssemblyInfoInputs.cache
+C:\Users\Oldy\RiderProjects\HelpfulLibrary\VmGenerator\VmGenerator.Sample\obj\Debug\net9.0\VmGenerator.Sample.AssemblyInfo.cs
+C:\Users\Oldy\RiderProjects\HelpfulLibrary\VmGenerator\VmGenerator.Sample\obj\Debug\net9.0\VmGenerator.Sample.csproj.CoreCompileInputs.cache
+C:\Users\Oldy\RiderProjects\HelpfulLibrary\VmGenerator\VmGenerator.Sample\bin\Debug\net9.0\VmGenerator.Sample.deps.json
+C:\Users\Oldy\RiderProjects\HelpfulLibrary\VmGenerator\VmGenerator.Sample\bin\Debug\net9.0\VmGenerator.Sample.dll
+C:\Users\Oldy\RiderProjects\HelpfulLibrary\VmGenerator\VmGenerator.Sample\bin\Debug\net9.0\VmGenerator.Sample.pdb
+C:\Users\Oldy\RiderProjects\HelpfulLibrary\VmGenerator\VmGenerator.Sample\obj\Debug\net9.0\VmGenerator.Sample.dll
+C:\Users\Oldy\RiderProjects\HelpfulLibrary\VmGenerator\VmGenerator.Sample\obj\Debug\net9.0\refint\VmGenerator.Sample.dll
+C:\Users\Oldy\RiderProjects\HelpfulLibrary\VmGenerator\VmGenerator.Sample\obj\Debug\net9.0\VmGenerator.Sample.pdb
+C:\Users\Oldy\RiderProjects\HelpfulLibrary\VmGenerator\VmGenerator.Sample\obj\Debug\net9.0\ref\VmGenerator.Sample.dll
+C:\Users\Oldy\RiderProjects\HelpfulLibrary\VmGenerator\VmGenerator.Sample\obj\Debug\net9.0\VmGenerator.Sample.csproj.AssemblyReference.cache
+C:\Users\Oldy\RiderProjects\HelpfulLibrary\VmGenerator\VmGenerator.Sample\bin\Debug\net9.0\HelpfulLibrary.dll
+C:\Users\Oldy\RiderProjects\HelpfulLibrary\VmGenerator\VmGenerator.Sample\bin\Debug\net9.0\HelpfulLibrary.pdb
+C:\Users\Oldy\RiderProjects\HelpfulLibrary\VmGenerator\VmGenerator.Sample\obj\Debug\net9.0\VmGenera.E7E8BC64.Up2Date
