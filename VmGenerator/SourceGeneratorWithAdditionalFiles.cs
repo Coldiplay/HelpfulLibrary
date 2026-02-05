@@ -21,6 +21,8 @@ public class SourceGeneratorWithAdditionalFiles : IIncrementalGenerator
 
     private void GenerateCode(SourceProductionContext context, ImmutableArray<AdditionalText> files)
     {
+        /*
+         * Пример из коробки
         foreach (var file in files)
         {
             // Get the text of the file.
@@ -46,6 +48,7 @@ namespace Entities
                 context.AddSource($"{className}.g.cs", source);
             }
         }
+        */
         GenerateVmLogic(context);
     }
 
